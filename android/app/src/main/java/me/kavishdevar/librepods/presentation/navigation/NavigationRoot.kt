@@ -73,6 +73,7 @@ fun NavigationRoot(
         is Screen.CallControl -> currentScreen.action
         Screen.MicrophoneSettings -> stringResource(R.string.microphone_mode)
         Screen.ReleaseNotes -> ""
+        Screen.Jimena -> "Jimena"
     }
 
     // is this a bad idea? probably. I can't think of a better way without having to pass around a shouldShowBackButton to each screen to pass to each scaffold

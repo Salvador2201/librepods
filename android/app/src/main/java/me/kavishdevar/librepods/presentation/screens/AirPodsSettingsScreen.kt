@@ -144,7 +144,8 @@ fun AirPodsSettingsRoute(
     navigateToVersion: () -> Unit,
     navigateToTroubleshooting: () -> Unit,
     navigateToCallControlScreen: (action: String) -> Unit,
-    navigateToMicrophoneSettings: () -> Unit
+    navigateToMicrophoneSettings: () -> Unit,
+    navigateToJimena: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -190,6 +191,7 @@ fun AirPodsSettingsRoute(
             navigateToTroubleshooting = navigateToTroubleshooting,
             navigateToCallControlScreen = navigateToCallControlScreen,
             navigateToMicrophoneSettings = navigateToMicrophoneSettings,
+            navigateToJimena = navigateToJimena,
 
             activateDemoMode = viewModel::activateDemoMode,
             reconnectFromSavedMac = viewModel::reconnectFromSavedMac
@@ -232,6 +234,7 @@ fun AirPodsSettingsScreen(
         navigateToTroubleshooting: () -> Unit,
         navigateToCallControlScreen: (action: String) -> Unit,
         navigateToMicrophoneSettings: () -> Unit,
+        navigateToJimena: () -> Unit = {},
 
         activateDemoMode: () -> Unit,
         reconnectFromSavedMac: () -> Unit,
@@ -514,6 +517,15 @@ fun AirPodsSettingsScreen(
                     name = stringResource(R.string.microphone_mode),
                     description = selectedModeText,
                     onClick = navigateToMicrophoneSettings
+                )
+            }
+
+            item(key = "spacer_jimena") { Spacer(modifier = Modifier.height(16.dp)) }
+            item(key = "jimena") {
+                StyledListItem(
+                    name = "Jimena",
+                    description = "Asistente de voz y traducción en vivo",
+                    onClick = navigateToJimena
                 )
             }
 

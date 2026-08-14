@@ -158,6 +158,9 @@ dependencies {
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.navigationevent)
+    implementation(libs.okhttp)
+    implementation(libs.vosk.android)
+    implementation("net.java.dev.jna:jna:5.17.0@aar")
 }
 
 aboutLibraries {
