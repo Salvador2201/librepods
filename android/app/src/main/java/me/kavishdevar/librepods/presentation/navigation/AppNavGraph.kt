@@ -27,6 +27,7 @@ import me.kavishdevar.librepods.presentation.screens.HeadTrackingScreen
 import me.kavishdevar.librepods.presentation.screens.HearingAidAdjustmentsScreen
 import me.kavishdevar.librepods.presentation.screens.HearingAidScreen
 import me.kavishdevar.librepods.presentation.screens.HearingProtectionScreen
+import me.kavishdevar.librepods.presentation.screens.JimenaSettingsScreen
 import me.kavishdevar.librepods.presentation.screens.LoadingScreen
 import me.kavishdevar.librepods.presentation.screens.LongPress
 import me.kavishdevar.librepods.presentation.screens.MicrophoneSettingsRoute
@@ -111,6 +112,7 @@ fun AppNavGraph(
                                 navigateToTroubleshooting = { navigate(Screen.Troubleshooting) },
                                 navigateToCallControlScreen = { navigate(Screen.CallControl(it)) },
                                 navigateToMicrophoneSettings = { navigate(Screen.MicrophoneSettings) },
+                                navigateToJimena = { navigate(Screen.Jimena) },
                             )
                         }
 
@@ -255,6 +257,11 @@ fun AppNavGraph(
                         NavEntry(screen) {
                             if (!airPodsViewModel.isReady) LoadingScreen()
                             MicrophoneSettingsRoute(viewModel = airPodsViewModel)
+                        }
+
+                    Screen.Jimena ->
+                        NavEntry(screen) {
+                            JimenaSettingsScreen()
                         }
 
                     is Screen.ReleaseNotes ->
