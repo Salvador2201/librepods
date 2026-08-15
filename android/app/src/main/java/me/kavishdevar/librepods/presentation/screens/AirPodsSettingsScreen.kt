@@ -838,6 +838,38 @@ fun AirPodsSettingsScreen(
                                 style = MaterialTheme.typography.labelSmallEmphasized,
                                 color = MaterialTheme.colorScheme.primary
                             )
+
+                            // Some OEM/Android combos block the L2CAP control socket entirely
+                            // without root+Xposed (see NotSupportedPage). BLEManager still picks
+                            // up battery/model from the AirPods' proximity-pairing BLE broadcast
+                            // in that case — same source CAPod/OpenPods read — so show that much
+                            // instead of leaving the screen stuck on "tap to reconnect" forever.
+                            state.bleOnlyModel?.let { model ->
+                                Spacer(Modifier.height(28.dp))
+                                BatteryView(
+                                    batteryList = state.battery,
+                                    budsRes = R.drawable.airpods_pro_2_buds,
+                                    caseRes = R.drawable.airpods_pro_2_case
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                Text(
+                                    text = "$model detectado por Bluetooth. Batería en vivo, pero " +
+                                        "tu teléfono no puede abrir el canal de control (necesita " +
+                                        "root + Xposed) — no vas a poder cambiar ANC ni gestos.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+                            }
+
+                            Spacer(Modifier.height(24.dp))
+                            OutlinedButton(onClick = navigateToJimena) {
+                                Text(
+                                    "Abrir Jimena",
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
                         }
 
                         if (!BuildConfig.PLAY_BUILD) {
