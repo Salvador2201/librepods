@@ -743,6 +743,35 @@ fun AirPodsSettingsScreen(
                                 },
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
+                            // Full AirPods control needs root on this OEM/Android combo (see
+                            // NotSupportedPage) — until that's an option, Jimena is the feature
+                            // that actually works here, so it leads instead of hiding below the
+                            // "tap to reconnect" state that's likely to just fail again.
+                            StyledButton(
+                                onClick = navigateToJimena,
+                                backdrop = backdrop,
+                                modifier = Modifier.fillMaxWidth(),
+                                maxScale = 0.05f,
+                                materialButtonStyle = MaterialButtonStyle.Filled,
+                                surfaceColor = MaterialTheme.colorScheme.primary
+                            ) {
+                                Text(
+                                    "Jimena",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.Center,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Asistente de voz y traducción en vivo",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Spacer(Modifier.height(40.dp))
+
                             val primaryContainerColor = MaterialTheme.colorScheme.tertiaryContainer
                             val secondaryContainerColor = MaterialTheme.colorScheme.secondaryContainer
 
@@ -862,14 +891,6 @@ fun AirPodsSettingsScreen(
                                     modifier = Modifier.padding(horizontal = 16.dp)
                                 )
                             }
-
-                            Spacer(Modifier.height(24.dp))
-                            OutlinedButton(onClick = navigateToJimena) {
-                                Text(
-                                    "Abrir Jimena",
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                            }
                         }
 
                         if (!BuildConfig.PLAY_BUILD) {
@@ -895,6 +916,31 @@ fun AirPodsSettingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.Center
                     ) {
+                        // Full AirPods control needs root on this OEM/Android combo (see
+                        // NotSupportedPage) — until that's an option, Jimena is the feature
+                        // that actually works here, so it leads instead of hiding below the
+                        // "tap to reconnect" state that's likely to just fail again.
+                        StyledButton(
+                            onClick = navigateToJimena,
+                            backdrop = backdrop,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("Jimena", style = MaterialTheme.typography.headlineSmall)
+                                Text(
+                                    "Asistente de voz y traducción en vivo",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
