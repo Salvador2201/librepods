@@ -39,7 +39,10 @@ fun NavigationRoot(
             when {
                 showOnboarding -> Screen.Onboarding
                 showReleaseNotes -> Screen.ReleaseNotes
-                else -> Screen.AirPodsSettings
+                // Jimena works regardless of whether AirPods ever connect (root+Xposed is
+                // required on most non-Pixel/OnePlus/Oppo phones) — it leads, AirPods control
+                // is reachable from here as an options icon instead of being the front door.
+                else -> Screen.Jimena
             }
         )
     }
@@ -103,6 +106,30 @@ fun NavigationRoot(
                     }
                 }
             )
+        Screen.Jimena -> listOf<@Composable (backdrop: LayerBackdrop) -> Unit>(
+            { scaffoldBackdrop ->
+                if (m3eEnabled) {
+                    FilledTonalIconButton(
+                        onClick = { backStack.add(Screen.AirPodsSettings) },
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Uniform)),
+                    ) {
+                        Icon(
+                            imageVector = MaterialIcons.bluetooth,
+                            contentDescription = "AirPods",
+                            modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
+                        )
+                    }
+                } else {
+                    StyledIconButton(
+                        onClick = { backStack.add(Screen.AirPodsSettings) },
+                        icon = "􀟝",
+                        backdrop = scaffoldBackdrop
+                    )
+                }
+            }
+        )
         Screen.HeadTracking -> listOf<@Composable (backdrop: LayerBackdrop) -> Unit>(
             { scaffoldBackdrop ->
                 if (m3eEnabled) {

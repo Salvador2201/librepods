@@ -45,6 +45,12 @@
 <!--        android:maxSdkVersion="30" />-->
     <uses-permission android:name="com.android.vending.BILLING" />
 
+    <!-- Lets Jimena's music search find and open Chavita (com.metrolist.music) via an
+         explicit-package Intent, required for package visibility since Android 11. -->
+    <queries>
+        <package android:name="com.metrolist.music" />
+    </queries>
+
     <application
         android:name=".LibrePodsApplication"
         android:allowBackup="true"

@@ -53,6 +53,7 @@ androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 aboutlibraries = { group = "com.mikepenz", name = "aboutlibraries", version.ref = "aboutLibraries" }
 aboutlibraries-compose-m3 = { group = "com.mikepenz", name = "aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
 androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core", version.ref = "materialIconsCore" }
+androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsCore" }
 backdrop = { group = "io.github.kyant0", name = "backdrop", version.ref = "backdrop" }
 billing = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
 hilt = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }

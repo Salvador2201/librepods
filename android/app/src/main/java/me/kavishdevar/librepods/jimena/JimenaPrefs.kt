@@ -25,4 +25,13 @@ class JimenaPrefs(context: Context) {
     var translateTargetLang: String
         get() = prefs.getString("translate_target", "Inglés") ?: "Inglés"
         set(value) = prefs.edit().putString("translate_target", value).apply()
+
+    /** Empty means "auto-pick the best available Spanish voice". */
+    var voiceName: String
+        get() = prefs.getString("voice_name", "") ?: ""
+        set(value) = prefs.edit().putString("voice_name", value).apply()
+
+    var muted: Boolean
+        get() = prefs.getBoolean("muted", false)
+        set(value) = prefs.edit().putBoolean("muted", value).apply()
 }
