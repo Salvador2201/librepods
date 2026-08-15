@@ -5,14 +5,17 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.media.audiofx.NoiseSuppressor
+import android.net.Uri
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import android.speech.tts.Voice
 import android.util.Log
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.core.app.NotificationCompat
@@ -39,6 +42,12 @@ private const val BUFFER_MS = 100
 private val BUFFER_SIZE = SAMPLE_RATE / 1000 * BUFFER_MS * 2 // 16-bit mono
 private const val MAX_HISTORY = 12
 private const val TTS_TIMEOUT_MS = 15000L
+private const val CHAVITA_PACKAGE = "com.metrolist.music"
+
+/** Broadcast with Jimena's current mic level (0f..~1f) and state text, for the live UI orb. */
+const val JIMENA_ACTION_STATUS = "me.kavishdevar.librepods.jimena.STATUS"
+const val JIMENA_EXTRA_LEVEL = "level"
+const val JIMENA_EXTRA_STATE = "state"
 
 val JIMENA_LANG_CODES = mapOf(
     "Español" to "es", "Inglés" to "en", "Portugués" to "pt",
@@ -124,6 +133,11 @@ class JimenaService : Service() {
         val buffer = ByteArray(BUFFER_SIZE)
 
         while (running) {
+            if (prefs.muted) {
+                updateNotification("Silenciado")
+                delay(200)
+                continue
+            }
             if (prefs.translateModeEnabled) {
                 updateNotification("Traduciendo en vivo (${prefs.translateSourceLang} → ${prefs.translateTargetLang})…")
                 runTranslateTurn(buffer)
@@ -140,9 +154,10 @@ class JimenaService : Service() {
 
     private fun waitForWakeWord(buffer: ByteArray): Boolean {
         val detector = wakeWordDetector ?: return false
-        while (running && !prefs.translateModeEnabled) {
+        while (running && !prefs.translateModeEnabled && !prefs.muted) {
             val read = audioRecord?.read(buffer, 0, buffer.size) ?: -1
             if (read <= 0) continue
+            broadcastStatus(pcmRms(buffer, read).toFloat(), "Esperando: oye Jimena")
             if (detector.feed(buffer, read)) return true
         }
         return false
@@ -169,7 +184,35 @@ class JimenaService : Service() {
         history.addLast(GroqClient.ChatMessage("assistant", reply))
         trimHistory()
 
+        val marker = JimenaPersona.MUSIC_SEARCH_MARKER
+        if (reply.trim().startsWith(marker)) {
+            val query = reply.trim().removePrefix(marker).trim()
+            val opened = searchInChavita(query)
+            speakAndDrain(
+                if (opened) "Buscando $query en Chavita, mi amor." else "No tengo Chavita instalada, mi cielo.",
+                Locale("es", "CO")
+            )
+            return
+        }
+
         speakAndDrain(reply, Locale("es", "CO"))
+    }
+
+    /** Fires the same "play from search" deep link Chavita already handles for Google Assistant. */
+    private fun searchInChavita(query: String): Boolean {
+        return try {
+            val uri = Uri.parse("https://music.youtube.com/search").buildUpon()
+                .appendQueryParameter("q", query)
+                .build()
+            startActivity(Intent(Intent.ACTION_VIEW, uri).apply {
+                setPackage(CHAVITA_PACKAGE)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+            true
+        } catch (e: ActivityNotFoundException) {
+            Log.w(TAG, "Chavita no está instalada", e)
+            false
+        }
     }
 
     private suspend fun runTranslateTurn(buffer: ByteArray) {
@@ -207,13 +250,23 @@ class JimenaService : Service() {
         while (running) {
             val read = audioRecord?.read(buffer, 0, buffer.size) ?: -1
             if (read <= 0) continue
+            broadcastStatus(pcmRms(buffer, read).toFloat(), "Escuchando…")
             if (recorder.feed(buffer, read)) break
         }
         return if (recorder.hasVoice()) recorder.pcm() else null
     }
 
+    private fun broadcastStatus(level: Float, state: String) {
+        sendBroadcast(Intent(JIMENA_ACTION_STATUS).apply {
+            putExtra(JIMENA_EXTRA_LEVEL, level)
+            putExtra(JIMENA_EXTRA_STATE, state)
+            setPackage(packageName)
+        })
+    }
+
     /** Speaks [text], then discards a beat of mic audio so TTS echo isn't mistaken for speech. */
     private suspend fun speakAndDrain(text: String, locale: Locale) {
+        updateNotification("Hablando…")
         speak(text, locale)
         val drain = ByteArray(BUFFER_SIZE)
         val start = System.currentTimeMillis()
@@ -258,7 +311,9 @@ class JimenaService : Service() {
     }
 
     private fun initTts() {
-        val engine = TextToSpeech(this) { }
+        val engine = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) applyVoice()
+        }
         engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) { ttsBusy = true }
             override fun onDone(utteranceId: String?) { ttsBusy = false }
@@ -266,6 +321,17 @@ class JimenaService : Service() {
             override fun onError(utteranceId: String?) { ttsBusy = false }
         })
         tts = engine
+    }
+
+    /** Applies the voice Salvador picked in settings, or the best available Spanish one. */
+    private fun applyVoice() {
+        val engine = tts ?: return
+        val voices = engine.voices ?: return
+        val chosen = prefs.voiceName
+            .takeIf { it.isNotBlank() }
+            ?.let { name -> voices.firstOrNull { it.name == name } }
+            ?: bestSpanishVoice(voices)
+        chosen?.let { engine.voice = it }
     }
 
     private fun stopAudio() {
@@ -310,9 +376,21 @@ class JimenaService : Service() {
     private fun updateNotification(text: String) {
         val manager = getSystemService(NotificationManager::class.java)
         manager.notify(NOTIF_ID, buildNotification(text))
+        broadcastStatus(0f, text)
     }
 
     companion object {
+        /** Highest-quality Spanish voice available, preferring network (neural, smoother-sounding)
+         *  voices over the on-device compact ones. Also used by JimenaSettingsScreen's picker. */
+        fun bestSpanishVoice(voices: Set<Voice>): Voice? =
+            voices
+                .filter { it.locale.language == "es" }
+                .sortedWith(
+                    compareByDescending<Voice> { it.isNetworkConnectionRequired }
+                        .thenByDescending { it.quality }
+                )
+                .firstOrNull()
+
         fun start(context: android.content.Context) {
             context.startForegroundService(Intent(context, JimenaService::class.java))
         }
