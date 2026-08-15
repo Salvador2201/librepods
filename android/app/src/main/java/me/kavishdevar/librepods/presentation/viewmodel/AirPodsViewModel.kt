@@ -61,6 +61,11 @@ data class AirPodsUiState(
     val deviceName: String = "AirPods",
 
     val isLocallyConnected: Boolean = false,
+    // Set from BLE proximity-pairing broadcasts alone when the L2CAP control socket can't
+    // connect (unsupported OEM/Android combo, no root). Null AirPods model name means nothing
+    // has been seen over BLE yet; non-null means we at least have live battery, even without a
+    // real (L2CAP) connection.
+    val bleOnlyModel: String? = null,
 
     val instance: AirPodsInstance? = null,
     val capabilities: Set<Capability> = emptySet(),
@@ -352,6 +357,11 @@ class AirPodsViewModel(
                     AirPodsNotifications.AIRPODS_INFORMATION_UPDATED -> {
                         loadInstance()
                     }
+
+                    AirPodsNotifications.AIRPODS_BLE_DETECTED -> {
+                        val model = intent.getStringExtra("model")
+                        _uiState.update { it.copy(bleOnlyModel = model) }
+                    }
                 }
             }
         }
@@ -362,6 +372,7 @@ class AirPodsViewModel(
             addAction(AirPodsNotifications.BATTERY_DATA)
             addAction(AirPodsNotifications.EQ_DATA)
             addAction(AirPodsNotifications.AIRPODS_INFORMATION_UPDATED)
+            addAction(AirPodsNotifications.AIRPODS_BLE_DETECTED)
         }
 
         appContext.registerReceiver(

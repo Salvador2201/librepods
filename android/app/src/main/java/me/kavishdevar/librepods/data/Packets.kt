@@ -85,6 +85,11 @@ class AirPodsNotifications {
         const val DISCONNECT_RECEIVERS = "me.kavishdevar.librepods.DISCONNECT_RECEIVERS"
         const val EQ_DATA = "me.kavishdevar.librepods.HEADPHONE_ACCOMMODATION"
         const val AIRPODS_INFORMATION_UPDATED = "me.kavishdevar.librepods.AIRPODS_INFORMATION_UPDATED"
+        // Fired when AirPods are seen over BLE proximity-pairing broadcasts (battery/model/lid)
+        // but the L2CAP control socket isn't connected — e.g. no root+Xposed on an OEM/Android
+        // combo Android's Bluetooth stack blocks L2CAP for. Lets the UI show live battery from
+        // BLE alone instead of just "not connected", same trick CAPod/OpenPods use.
+        const val AIRPODS_BLE_DETECTED = "me.kavishdevar.librepods.AIRPODS_BLE_DETECTED"
     }
 
     class EarDetection {

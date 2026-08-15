@@ -241,11 +241,25 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         }
     }
 
+    /**
+     * Lets the Settings UI show live battery from BLE alone when the L2CAP control socket
+     * can't connect (no root+Xposed on an unsupported OEM/Android combo) instead of just
+     * "not connected" — same source CAPod/OpenPods read for their rootless battery display.
+     */
+    private fun broadcastBleOnlyDetected(model: String) {
+        if (BluetoothConnectionManager.aacpSocket?.isConnected == true) return
+        sendBroadcast(Intent(AirPodsNotifications.AIRPODS_BLE_DETECTED).apply {
+            putExtra("model", model)
+            setPackage(packageName)
+        })
+    }
+
     private val bleStatusListener = object : BLEManager.AirPodsStatusListener {
         @SuppressLint("NewApi")
         override fun onDeviceStatusChanged(
             device: BLEManager.AirPodsStatus, previousStatus: BLEManager.AirPodsStatus?
         ) {
+            broadcastBleOnlyDetected(device.model)
             if (device.connectionState == "Disconnected" && BluetoothConnectionManager.aacpSocket?.isConnected != true) { // should never happen unless android messes up and sends us a stale broadcast
                 Log.d(TAG, "Seems no device has taken over, we will.")
                 val bluetoothManager = getSystemService(BluetoothManager::class.java)
@@ -279,6 +293,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
 
         override fun onBroadcastFromNewAddress(device: BLEManager.AirPodsStatus) {
             Log.d(TAG, "New address detected")
+            broadcastBleOnlyDetected(device.model)
         }
 
         override fun onLidStateChanged(
@@ -326,6 +341,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
 
         override fun onBatteryChanged(device: BLEManager.AirPodsStatus) {
             if (BluetoothConnectionManager.aacpSocket?.isConnected == true) return
+            broadcastBleOnlyDetected(device.model)
             val leftLevel = bleManager.getMostRecentStatus()?.leftBattery ?: 0
             val rightLevel = bleManager.getMostRecentStatus()?.rightBattery ?: 0
             val caseLevel = bleManager.getMostRecentStatus()?.caseBattery ?: 0
